@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import MNIST
 from trainer import Trainer
+from wandb_logger import WandbLogger
 
 
 class MNISTModel(Module):
@@ -92,5 +93,6 @@ if __name__ == "__main__":
         mode='min'
     )
     model = MNISTModel()
-    trainer = Trainer(checkpoint_callback=checkpoint_callback)
+    logger = WandbLogger("test", model)
+    trainer = Trainer(checkpoint_callback=checkpoint_callback, logger=logger)
     trainer.fit(model)

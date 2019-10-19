@@ -4,10 +4,11 @@ import torch
 
 
 class Trainer():
-    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None):
+    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, logger=None):
         self.gpu_id = gpu_id
         self.num_max_epochs = num_max_epochs
         self.checkpoint_callback = checkpoint_callback
+        self.logger = logger
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -24,7 +25,6 @@ class Trainer():
         self.model.to(self.device)
         self.model.train()
         dataloader = model.train_dataloader()
-        outputs = []
 
         for epoch in range(self.num_max_epochs):
             with tqdm(total=len(dataloader)) as pbar:
@@ -33,13 +33,13 @@ class Trainer():
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                     output = model.training_step(batch)
-                    outputs.append(output)
                     if 'loss' in output:
                         output['loss'].backward()
-                    # pbar.set_postfix({"loss": 1.0})
+                    # pbar.set_postfix(self.__process_logs(output))
                     model.optimizer_step(self.optimizer)
+                    self.__log_metrics(output)
                     pbar.update(1)
-            self.on_epoch_end(epoch, outputs)
+            self.on_epoch_end(epoch)
 
     @torch.no_grad()
     def validate(self, model):
@@ -74,8 +74,14 @@ class Trainer():
 
         return metrics
 
-    def on_epoch_end(self, epoch, outputs):
+    def __log_metrics(self, outputs):
+        if self.logger != None and 'log' in outputs:
+            processed_logs = self.__process_logs(outputs['log'])
+            self.logger.log_metrics(processed_logs)
+
+    def on_epoch_end(self, epoch):
         logs = self.validate(self.model)
+        self.__log_metrics(logs)
         processed_logs = self.__process_logs(logs)
         if self.checkpoint_callback != None:
             self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, logs=processed_logs)
