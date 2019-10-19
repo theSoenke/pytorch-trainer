@@ -63,7 +63,7 @@ class MNISTModel(Module):
 
     def train_dataloader(self):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0,))])
-        dataset = MNIST(root='./mnist', train=True, transform=transform, download=True)
+        dataset = MNIST(os.getcwd(), train=True, transform=transform, download=True)
         loader = DataLoader(
             dataset=dataset,
             batch_size=64,
@@ -75,7 +75,7 @@ class MNISTModel(Module):
 
     def val_dataloader(self):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0,))])
-        dataset = MNIST(root='./mnist', train=False, transform=transform, download=True)
+        dataset = MNIST(os.getcwd(), train=False, transform=transform, download=True)
         loader = DataLoader(
             dataset=dataset,
             batch_size=64,
