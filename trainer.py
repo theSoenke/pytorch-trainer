@@ -1,6 +1,5 @@
-from tqdm import tqdm
-
 import torch
+from tqdm import tqdm
 
 
 class Trainer():
@@ -35,6 +34,7 @@ class Trainer():
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                     output = model.training_step(batch)
+                    pbar.set_postfix(self.__process_logs(output))
                     if 'loss' in output:
                         output['loss'].backward()
                     model.optimizer_step(self.optimizer)
@@ -54,9 +54,8 @@ class Trainer():
 
     @torch.no_grad()
     def validate(self, model):
-        dataloader = model.val_dataloader()
         model.eval()
-
+        dataloader = model.val_dataloader()
         outputs = []
         with tqdm(total=len(dataloader)) as pbar:
             for batch in dataloader:
@@ -66,8 +65,9 @@ class Trainer():
                 output = model.validation_step(batch)
                 outputs.append(output)
                 pbar.update(1)
+
+        model.train()
         eval_results = self.model.validation_end(outputs)
-        # self.logger.log_metrics(eval_results['log'])
         return eval_results
 
     def test(self, model):
