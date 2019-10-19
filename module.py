@@ -12,16 +12,16 @@ class Module(nn.Module):
         raise NotImplementedError
 
     def validation_step(self, batch):
-        pass
+        raise NotImplementedError
 
     def test_step(self, batch):
-        pass
+        raise NotImplementedError
 
     def validation_end(self, outputs):
-        pass
+        raise NotImplementedError
 
     def test_end(self, outputs):
-        pass
+        raise NotImplementedError
 
     def configure_optimizers(self):
         raise NotImplementedError
@@ -34,14 +34,13 @@ class Module(nn.Module):
         raise NotImplementedError
 
     def test_dataloader(self):
-        return None
+        raise NotImplementedError
 
     def val_dataloader(self):
-        return None
+        raise NotImplementedError
 
     def summarize(self, mode):
-        # TODO
-        pass
+        raise NotImplementedError
 
     def freeze(self):
         for param in self.parameters():
