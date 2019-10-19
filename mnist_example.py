@@ -1,4 +1,5 @@
 import torch
+from early_stopping import EarlyStopping
 from model_checkpoint import ModelCheckpoint
 from module import Module
 from torch import nn
@@ -65,7 +66,7 @@ class MNISTModel(Module):
         dataset = MNIST(root='./mnist', train=True, transform=transform, download=True)
         loader = DataLoader(
             dataset=dataset,
-            batch_size=16,
+            batch_size=64,
             shuffle=True,
             num_workers=0
         )
@@ -77,7 +78,7 @@ class MNISTModel(Module):
         dataset = MNIST(root='./mnist', train=False, transform=transform, download=True)
         loader = DataLoader(
             dataset=dataset,
-            batch_size=16,
+            batch_size=64,
             shuffle=False,
             num_workers=0
         )
@@ -92,7 +93,18 @@ if __name__ == "__main__":
         save_best_only=True,
         mode='min'
     )
+    early_stop_callback = EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.00,
+        patience=5,
+        mode='min'
+    )
+
     model = MNISTModel()
     logger = WandbLogger("test", model)
-    trainer = Trainer(checkpoint_callback=checkpoint_callback, logger=logger)
+    trainer = Trainer(
+        checkpoint_callback=checkpoint_callback,
+        early_stop_callback=early_stop_callback,
+        logger=logger
+    )
     trainer.fit(model)

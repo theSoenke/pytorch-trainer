@@ -4,10 +4,11 @@ import torch
 
 
 class Trainer():
-    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, logger=None):
+    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, early_stop_callback=None, logger=None):
         self.gpu_id = gpu_id
         self.num_max_epochs = num_max_epochs
         self.checkpoint_callback = checkpoint_callback
+        self.early_stop_callback = early_stop_callback
         self.logger = logger
 
         torch.manual_seed(seed)
@@ -27,19 +28,29 @@ class Trainer():
         dataloader = model.train_dataloader()
 
         for epoch in range(self.num_max_epochs):
+            self.current_epoch += 1
             with tqdm(total=len(dataloader)) as pbar:
+                pbar.set_description(f"Epoch {epoch}")
                 for batch in dataloader:
-                    pbar.set_description(f"Epoch {epoch}")
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                     output = model.training_step(batch)
                     if 'loss' in output:
                         output['loss'].backward()
-                    # pbar.set_postfix(self.__process_logs(output))
                     model.optimizer_step(self.optimizer)
                     self.__log_metrics(output)
                     pbar.update(1)
-            self.on_epoch_end(epoch)
+
+            logs = self.validate(self.model)
+            self.__log_metrics(logs)
+            processed_logs = self.__process_logs(logs)
+            if self.checkpoint_callback != None:
+                self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, logs=processed_logs)
+
+            if self.early_stop_callback != None:
+                stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=processed_logs)
+                if stop_training:
+                    break
 
     @torch.no_grad()
     def validate(self, model):
@@ -78,13 +89,6 @@ class Trainer():
         if self.logger != None and 'log' in outputs:
             processed_logs = self.__process_logs(outputs['log'])
             self.logger.log_metrics(processed_logs)
-
-    def on_epoch_end(self, epoch):
-        logs = self.validate(self.model)
-        self.__log_metrics(logs)
-        processed_logs = self.__process_logs(logs)
-        if self.checkpoint_callback != None:
-            self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, logs=processed_logs)
 
     def transfer_batch_to_gpu(self, batch, gpu_id):
         if callable(getattr(batch, 'cuda', None)):

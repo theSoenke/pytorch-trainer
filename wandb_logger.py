@@ -9,7 +9,7 @@ class WandbLogger():
     def log_hyperparams(self, params):
         wandb.config.update(params)
 
-    def log_metrics(self, metrics, step_num=0):
+    def log_metrics(self, metrics):
         wandb.log(metrics)
 
     def log(self, key, value):
