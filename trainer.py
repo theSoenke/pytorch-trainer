@@ -25,6 +25,7 @@ class Trainer():
         self.model.to(self.device)
         self.model.train()
         dataloader = model.train_dataloader()
+        print(f"Training samples: {len(dataloader.dataset)}")
 
         for epoch in range(self.num_max_epochs):
             self.current_epoch += 1
@@ -54,8 +55,11 @@ class Trainer():
 
     @torch.no_grad()
     def validate(self, model):
+        self.model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader()
+        print(f"Validation samples: {len(dataloader.dataset)}")
+
         outputs = []
         with tqdm(total=len(dataloader)) as pbar:
             for batch in dataloader:
