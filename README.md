@@ -8,13 +8,14 @@ import os
 
 import torch
 import torchvision.transforms as transforms
-from early_stopping import EarlyStopping
-from model_checkpoint import ModelCheckpoint
 from module import Module
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
-from trainer import Trainer
+
+from pytorch_trainer.early_stopping import EarlyStopping
+from pytorch_trainer.model_checkpoint import ModelCheckpoint
+from pytorch_trainer.trainer import Trainer
 
 
 class MNISTModel(Module):

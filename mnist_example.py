@@ -1,14 +1,16 @@
+import os
+
 import torch
-from early_stopping import EarlyStopping
-from model_checkpoint import ModelCheckpoint
-from module import Module
+from pytorch_trainer.early_stopping import EarlyStopping
+from pytorch_trainer.model_checkpoint import ModelCheckpoint
+from pytorch_trainer.module import Module
+from pytorch_trainer.trainer import Trainer
+from pytorch_trainer.wandb_logger import WandbLogger
 from torch import nn
 from torch.functional import F
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import MNIST
-from trainer import Trainer
-from wandb_logger import WandbLogger
 
 
 class MNISTModel(Module):
@@ -101,10 +103,8 @@ if __name__ == "__main__":
     )
 
     model = MNISTModel()
-    logger = WandbLogger("test", model)
     trainer = Trainer(
         checkpoint_callback=checkpoint_callback,
         early_stop_callback=early_stop_callback,
-        logger=logger
     )
     trainer.fit(model)
