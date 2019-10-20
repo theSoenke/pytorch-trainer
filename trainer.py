@@ -17,7 +17,6 @@ class Trainer():
 
         self.use_gpu = torch.cuda.is_available()
         self.device = torch.device(f"cuda:{gpu_id}" if self.use_gpu else "cpu")
-        self.current_epoch = 0
 
     def fit(self, model):
         self.model = model
@@ -28,7 +27,6 @@ class Trainer():
         print(f"Training samples: {len(dataloader.dataset)}")
 
         for epoch in range(self.num_max_epochs):
-            self.current_epoch += 1
             with tqdm(total=len(dataloader)) as pbar:
                 pbar.set_description(f"Epoch {epoch}")
                 for batch in dataloader:
@@ -55,7 +53,7 @@ class Trainer():
 
     @torch.no_grad()
     def validate(self, model):
-        self.model.to(self.device)
+        model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader()
         print(f"Validation samples: {len(dataloader.dataset)}")
@@ -71,11 +69,30 @@ class Trainer():
                 pbar.update(1)
 
         model.train()
-        eval_results = self.model.validation_end(outputs)
-        return eval_results
+        results = model.validation_end(outputs)
+        return results
 
+    @torch.no_grad()
     def test(self, model):
-        pass
+        model.to(self.device)
+        model.eval()
+        dataloader = model.test_dataloader()
+        print(f"Test samples: {len(dataloader.dataset)}")
+
+        outputs = []
+        with tqdm(total=len(dataloader)) as pbar:
+            for batch in dataloader:
+                pbar.set_description("Test")
+                if self.use_gpu:
+                    batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
+                output = model.test_step(batch)
+                outputs.append(output)
+                pbar.update(1)
+
+        model.train()
+        results = model.test_end(outputs)
+        return results
+
 
     def __process_logs(self, logs):
         metrics = {}
