@@ -38,15 +38,15 @@ class ModelCheckpoint():
         if self.save_best_only:
             current = logs.get(self.monitor)
             if current is None:
-                print(f"Can save best model only with {self.monitor} available", RuntimeWarning)
+                print(f"Can save best model only with {self.monitor} available\n", RuntimeWarning)
             else:
                 if self.monitor_op(current, self.best):
-                    print(f"\nEpoch {epoch+1:05d}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {filepath}")
+                    print(f"Epoch {epoch+1:05d}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {filepath}\n")
                     self.best = current
                     self.save_model(filepath, save_func, overwrite=True)
 
                 else:
-                    print(f"\nEpoch {epoch + 1:05d}: {self.monitor} did not improve")
+                    print(f"Epoch {epoch + 1:05d}: {self.monitor} did not improve\n")
         else:
-            print(f"\nEpoch {epoch+1:05d}: saving model to {filepath}")
+            print(f"Epoch {epoch+1:05d}: saving model to {filepath}\n")
             self.save_model(filepath, save_func, overwrite=False)

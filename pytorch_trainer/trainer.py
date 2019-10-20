@@ -29,7 +29,7 @@ class Trainer():
 
         for epoch in range(self.num_max_epochs):
             with tqdm(total=len(dataloader)) as pbar:
-                pbar.set_description(f"Epoch {epoch}")
+                pbar.set_description(f"Epoch {epoch:05d}")
                 for batch in dataloader:
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
