@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 class Trainer():
     def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, early_stop_callback=None, logger=None):
+        self.seed = seed
         self.gpu_id = gpu_id
         self.num_max_epochs = num_max_epochs
         self.checkpoint_callback = checkpoint_callback
@@ -44,7 +45,7 @@ class Trainer():
             self.__log_metrics(logs)
             processed_logs = self.__process_logs(logs)
             if self.checkpoint_callback != None:
-                self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, logs=processed_logs)
+                self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
 
             if self.early_stop_callback != None:
                 stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=processed_logs)

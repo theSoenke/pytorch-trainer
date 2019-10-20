@@ -32,9 +32,9 @@ class ModelCheckpoint():
         self.last_checkpoint_path = filepath
         save_func(filepath)
 
-    def on_epoch_end(self, epoch, save_func, logs=None):
+    def on_epoch_end(self, epoch, save_func, seed, logs=None):
         logs = logs or {}
-        filepath = '{}/{}_ckpt_epoch_{}.ckpt'.format(self.directory, self.prefix, epoch + 1)
+        filepath = f"{self.directory}/{self.prefix}_ckpt_epoch_{epoch + 1}_seed_{seed}.ckpt"
         if self.save_best_only:
             current = logs.get(self.monitor)
             if current is None:
