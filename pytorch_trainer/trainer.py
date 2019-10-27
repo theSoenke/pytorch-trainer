@@ -57,12 +57,12 @@ class Trainer():
         model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader
-        print(f"Validation samples: {len(dataloader.dataset)}")
+        samples = len(dataloader.dataset)
 
         outputs = []
         with tqdm(total=len(dataloader)) as pbar:
             for batch in dataloader:
-                pbar.set_description("Validation")
+                pbar.set_description(f"Validation [{samples} samples]")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.validation_step(batch)
@@ -78,12 +78,12 @@ class Trainer():
         model.to(self.device)
         model.eval()
         dataloader = model.test_dataloader
-        print(f"Test samples: {len(dataloader.dataset)}")
+        samples = len(dataloader.dataset)
 
         outputs = []
         with tqdm(total=len(dataloader)) as pbar:
             for batch in dataloader:
-                pbar.set_description("Test")
+                pbar.set_description(f"Test [{samples} samples]")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.test_step(batch)
