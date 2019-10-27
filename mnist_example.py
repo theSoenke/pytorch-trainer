@@ -1,7 +1,8 @@
 import os
 
 import torch
-from pytorch_trainer import EarlyStopping, ModelCheckpoint, Module, Trainer
+from pytorch_trainer import (EarlyStopping, ModelCheckpoint, Module, Trainer,
+                             data_loader)
 from torch import nn
 from torch.functional import F
 from torch.utils.data import DataLoader
@@ -59,6 +60,7 @@ class MNISTModel(Module):
             'log': logs,
         }
 
+    @data_loader
     def train_dataloader(self):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0,))])
         dataset = MNIST(os.getcwd(), train=True, transform=transform, download=True)
@@ -71,6 +73,7 @@ class MNISTModel(Module):
 
         return loader
 
+    @data_loader
     def val_dataloader(self):
         transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0,))])
         dataset = MNIST(os.getcwd(), train=False, transform=transform, download=True)

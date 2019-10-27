@@ -1,3 +1,4 @@
+from .decorators import data_loader
 from .early_stopping import EarlyStopping
 from .model_checkpoint import ModelCheckpoint
 from .module import Module

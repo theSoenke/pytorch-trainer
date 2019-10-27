@@ -13,7 +13,8 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 
-from pytorch_trainer import (EarlyStopping, ModelCheckpoint, Module, Trainer)
+from pytorch_trainer import (EarlyStopping, ModelCheckpoint, Module, Trainer,
+                             data_loader)
 
 class MNISTModel(Module):
     def __init__(self):
@@ -41,9 +42,11 @@ class MNISTModel(Module):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=0.02)
 
+    @data_loader
     def train_dataloader(self):
         return DataLoader(MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()), batch_size=32)
 
+    @data_loader
     def val_dataloader(self):
         return DataLoader(MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()), batch_size=32)
 
