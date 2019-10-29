@@ -25,21 +25,26 @@ class Trainer():
         self.model.to(self.device)
         self.model.train()
         dataloader = model.train_dataloader
-        print(f"Training samples: {len(dataloader.dataset)}")
+        samples = len(dataloader.dataset)
+        batch_size = dataloader.batch_size
 
         for epoch in range(self.num_max_epochs):
-            with tqdm(total=len(dataloader)) as pbar:
+            with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
-                for batch in dataloader:
+                for i, batch in enumerate(dataloader):
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                     output = model.training_step(batch)
-                    pbar.set_postfix(self.__process_logs(output))
                     if 'loss' in output:
                         output['loss'].backward()
                     model.optimizer_step(self.optimizer)
+
+                    logs = self.__process_logs(output)
+                    logs['bs'] = batch_size
+                    pbar.set_postfix(logs)
                     self.__log_metrics(output)
-                    pbar.update(1)
+                    processed = min((i + 1) * batch_size, samples)
+                    pbar.n = processed
 
             logs = self.validate(self.model)
             self.__log_metrics(logs)
@@ -58,16 +63,18 @@ class Trainer():
         model.eval()
         dataloader = model.val_dataloader
         samples = len(dataloader.dataset)
+        batch_size = dataloader.batch_size
 
         outputs = []
-        with tqdm(total=len(dataloader)) as pbar:
-            for batch in dataloader:
-                pbar.set_description(f"Validation [{samples} samples]")
+        with tqdm(total=samples) as pbar:
+            for i, batch in enumerate(dataloader):
+                pbar.set_description("Validation")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.validation_step(batch)
                 outputs.append(output)
-                pbar.update(1)
+                processed = min((i + 1) * batch_size, samples)
+                pbar.n = processed
 
         model.train()
         results = model.validation_end(outputs)
@@ -79,21 +86,22 @@ class Trainer():
         model.eval()
         dataloader = model.test_dataloader
         samples = len(dataloader.dataset)
+        batch_size = dataloader.batch_size
 
         outputs = []
-        with tqdm(total=len(dataloader)) as pbar:
-            for batch in dataloader:
-                pbar.set_description(f"Test [{samples} samples]")
+        with tqdm(total=samples) as pbar:
+            for i, batch in enumerate(dataloader):
+                pbar.set_description("Test")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.test_step(batch)
                 outputs.append(output)
-                pbar.update(1)
+                processed = min((i + 1) * batch_size, samples)
+                pbar.n = processed
 
         model.train()
         results = model.test_end(outputs)
         return results
-
 
     def __process_logs(self, logs):
         metrics = {}
