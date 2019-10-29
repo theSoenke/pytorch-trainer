@@ -34,19 +34,19 @@ class ModelCheckpoint():
 
     def on_epoch_end(self, epoch, save_func, seed, logs=None):
         logs = logs or {}
-        filepath = f"{self.directory}/{self.prefix}_ckpt_epoch_{epoch + 1}_seed_{seed}.ckpt"
+        filepath = f"{self.directory}/{self.prefix}_ckpt_epoch_{epoch}_seed_{seed}.ckpt"
         if self.save_best_only:
             current = logs.get(self.monitor)
             if current is None:
                 print(f"Can save best model only with {self.monitor} available\n", RuntimeWarning)
             else:
                 if self.monitor_op(current, self.best):
-                    print(f"Epoch {epoch+1:05d}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {filepath}\n")
+                    print(f"Epoch {epoch:05d}: {self.monitor} improved from {self.best:.5f} to {current:.5f}, saving model to {filepath}\n")
                     self.best = current
                     self.save_model(filepath, save_func, overwrite=True)
 
                 else:
-                    print(f"Epoch {epoch + 1:05d}: {self.monitor} did not improve\n")
+                    print(f"Epoch {epoch:05d}: {self.monitor} did not improve\n")
         else:
-            print(f"Epoch {epoch+1:05d}: saving model to {filepath}\n")
+            print(f"Epoch {epoch:05d}: saving model to {filepath}\n")
             self.save_model(filepath, save_func, overwrite=False)
