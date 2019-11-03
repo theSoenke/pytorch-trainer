@@ -1,3 +1,5 @@
+import random
+
 import torch
 from tqdm import tqdm
 
@@ -13,6 +15,7 @@ class Trainer():
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+        random.seed(seed)
         torch.backends.cudnn.deterministic = False
         torch.backends.cudnn.benchmark = True
 
@@ -67,8 +70,8 @@ class Trainer():
 
         outputs = []
         with tqdm(total=samples) as pbar:
+            pbar.set_description("Validation")
             for i, batch in enumerate(dataloader):
-                pbar.set_description("Validation")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.validation_step(batch)
@@ -90,8 +93,8 @@ class Trainer():
 
         outputs = []
         with tqdm(total=samples) as pbar:
+            pbar.set_description("Test")
             for i, batch in enumerate(dataloader):
-                pbar.set_description("Test")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.test_step(batch)
