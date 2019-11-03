@@ -27,7 +27,7 @@ class Trainer():
         self.optimizer = self.model.configure_optimizers()
         self.model.to(self.device)
         self.model.train()
-        dataloader = model.train_dataloader
+        dataloader = model.train_dataloader()
         samples = len(dataloader.dataset)
         batch_size = dataloader.batch_size
 
@@ -64,7 +64,7 @@ class Trainer():
     def validate(self, model):
         model.to(self.device)
         model.eval()
-        dataloader = model.val_dataloader
+        dataloader = model.val_dataloader()
         samples = len(dataloader.dataset)
         batch_size = dataloader.batch_size
 
@@ -87,7 +87,7 @@ class Trainer():
     def test(self, model):
         model.to(self.device)
         model.eval()
-        dataloader = model.test_dataloader
+        dataloader = model.test_dataloader()
         samples = len(dataloader.dataset)
         batch_size = dataloader.batch_size
 
