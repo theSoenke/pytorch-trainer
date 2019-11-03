@@ -5,16 +5,16 @@ class Module(nn.Module):
     def forward(self, *args, **kwargs):
         raise NotImplementedError
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_num):
         """
         return loss(optimal), dict with metrics to display
         """
         raise NotImplementedError
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_num):
         raise NotImplementedError
 
-    def test_step(self, batch):
+    def test_step(self, batch, batch_num):
         raise NotImplementedError
 
     def validation_end(self, outputs):

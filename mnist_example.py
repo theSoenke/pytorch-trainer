@@ -32,7 +32,7 @@ class MNISTModel(Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_num):
         x, target = batch
 
         output = self.forward(x)
@@ -41,7 +41,7 @@ class MNISTModel(Module):
         logger = {'train_loss': loss}
         return {'loss': loss, 'log': logger}
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_num):
         x, target = batch
 
         output = self.forward(x)

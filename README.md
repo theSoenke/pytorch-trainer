@@ -24,13 +24,13 @@ class MNISTModel(Module):
     def forward(self, x):
         return torch.relu(self.l1(x.view(x.size(0), -1)))
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_num):
         x, y = batch
         y_hat = self.forward(x)
         loss = F.cross_entropy(y_hat, y)
         return {'loss': loss}
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_num):
         x, y = batch
         output = self.forward(x)
         return {'val_loss': F.cross_entropy(output, y)}

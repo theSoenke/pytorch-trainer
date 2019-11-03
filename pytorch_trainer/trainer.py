@@ -32,12 +32,13 @@ class Trainer():
         batch_size = dataloader.batch_size
 
         for epoch in range(self.num_max_epochs):
+            self.current_epoch = epoch
             with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
                 for i, batch in enumerate(dataloader):
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                    output = model.training_step(batch)
+                    output = model.training_step(batch, i)
                     if 'loss' in output:
                         output['loss'].backward()
                     model.optimizer_step(self.optimizer)
@@ -74,7 +75,7 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                output = model.validation_step(batch)
+                output = model.validation_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
                 pbar.n = processed
@@ -97,7 +98,7 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                output = model.test_step(batch)
+                output = model.test_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
                 pbar.n = processed
