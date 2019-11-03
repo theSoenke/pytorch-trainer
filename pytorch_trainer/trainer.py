@@ -32,7 +32,6 @@ class Trainer():
         batch_size = dataloader.batch_size
 
         for epoch in range(self.num_max_epochs):
-            self.current_epoch = epoch
             with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
                 for i, batch in enumerate(dataloader):
