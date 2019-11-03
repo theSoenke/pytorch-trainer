@@ -70,8 +70,8 @@ class Trainer():
 
         outputs = []
         with tqdm(total=samples) as pbar:
-            pbar.set_description("Validation")
             for i, batch in enumerate(dataloader):
+                pbar.set_description("Validation")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.validation_step(batch, i)
@@ -93,8 +93,8 @@ class Trainer():
 
         outputs = []
         with tqdm(total=samples) as pbar:
-            pbar.set_description("Test")
             for i, batch in enumerate(dataloader):
+                pbar.set_description("Test")
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                 output = model.test_step(batch, i)
