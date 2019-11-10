@@ -3,15 +3,22 @@ import random
 import torch
 from tqdm import tqdm
 
+try:
+    from apex import amp
+    APEX_AVAILABLE = True
+except ImportError:
+    APEX_AVAILABLE = False
+
 
 class Trainer():
-    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, early_stop_callback=None, logger=None):
+    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, early_stop_callback=None, logger=None, use_amp=False):
         self.seed = seed
         self.gpu_id = gpu_id
         self.num_max_epochs = num_max_epochs
         self.checkpoint_callback = checkpoint_callback
         self.early_stop_callback = early_stop_callback
         self.logger = logger
+        self.use_amp = use_amp
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -26,6 +33,11 @@ class Trainer():
         self.model = model
         self.optimizer = self.model.configure_optimizers()
         self.model.to(self.device)
+        if self.use_amp:
+            if not APEX_AVAILABLE:
+                print("apex is not installed")
+            else:
+                self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
         dataloader = model.train_dataloader()
         samples = len(dataloader.dataset)
@@ -39,7 +51,11 @@ class Trainer():
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
                     output = model.training_step(batch, i)
                     if 'loss' in output:
-                        output['loss'].backward()
+                        if APEX_AVAILABLE and self.use_amp:
+                            with amp.scale_loss(output['loss'], self.optimizer) as scaled_loss:
+                                scaled_loss.backward()
+                        else:
+                            output['loss'].backward()
                     model.optimizer_step(self.optimizer)
 
                     logs = self.__process_logs(output)

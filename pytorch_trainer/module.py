@@ -49,3 +49,10 @@ class Module(nn.Module):
     def unfreeze(self):
         for param in self.parameters():
             param.requires_grad = True
+
+    def configure_apex(self, amp, model, optimizers, amp_level):
+        model, optimizers = amp.initialize(
+            model, optimizers, opt_level=amp_level,
+        )
+
+        return model, optimizers
