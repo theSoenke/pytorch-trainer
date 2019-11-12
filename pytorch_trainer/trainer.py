@@ -30,10 +30,17 @@ class Trainer():
         self.checkpoint_callback = checkpoint_callback
         self.early_stop_callback = early_stop_callback
         self.logger = logger
-        self.use_amp = use_amp
         self.train_percent = train_percent
         self.val_percent = val_percent
         self.test_percent = test_percent
+
+        self.use_amp = False
+        if use_amp:
+            if not APEX_AVAILABLE:
+                self.use_amp = False
+                print("apex is not installed")
+            else:
+                self.use_amp = True
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -49,10 +56,7 @@ class Trainer():
         self.optimizer = self.model.configure_optimizers()
         self.model.to(self.device)
         if self.use_amp:
-            if not APEX_AVAILABLE:
-                print("apex is not installed")
-            else:
-                self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
+            self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
         dataloader = model.train_dataloader()
         samples = int(len(dataloader.dataset) * self.train_percent)
@@ -65,14 +69,9 @@ class Trainer():
                 for i, batch in enumerate(dataloader):
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                    output = model.training_step(batch, i)
-                    if 'loss' in output:
-                        if APEX_AVAILABLE and self.use_amp:
-                            with amp.scale_loss(output['loss'], self.optimizer) as scaled_loss:
-                                scaled_loss.backward()
-                        else:
-                            output['loss'].backward()
-                    model.optimizer_step(self.optimizer)
+                    output = self.model.training_step(batch, i)
+                    self.model.backward(output['loss'], self.optimizer, self.use_amp)
+                    self.model.optimizer_step(self.optimizer)
 
                     logs = self.__process_logs(output)
                     pbar.set_postfix(logs)
@@ -88,7 +87,7 @@ class Trainer():
                 self.__log_metrics(logs)
                 processed_logs = self.__process_logs(logs)
             else:
-                print("Skip validation")
+                print("Skipping validation")
                 processed_logs = {}
             if self.checkpoint_callback != None:
                 self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)

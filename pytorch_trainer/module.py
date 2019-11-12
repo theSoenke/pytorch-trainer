@@ -1,5 +1,11 @@
 from torch import nn, optim
 
+try:
+    from apex import amp
+    APEX_AVAILABLE = True
+except ImportError:
+    APEX_AVAILABLE = False
+
 
 class Module(nn.Module):
     def forward(self, *args, **kwargs):
@@ -30,6 +36,13 @@ class Module(nn.Module):
         optimizer.step()
         optimizer.zero_grad()
 
+    def backward(self, loss, optimizer, use_amp):
+        if use_amp:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+
     def train_dataloader(self):
         raise NotImplementedError
 
@@ -37,9 +50,6 @@ class Module(nn.Module):
         raise NotImplementedError
 
     def val_dataloader(self):
-        raise NotImplementedError
-
-    def summarize(self, mode):
         raise NotImplementedError
 
     def freeze(self):
