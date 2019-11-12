@@ -30,9 +30,8 @@ class EarlyStopping():
         current = logs.get(self.monitor)
         stop_training = False
         if current is None:
-            print(f"Early stopping metric `{self.monitor}` is not available. Available metrics: {','.join(list(logs.keys()))}", RuntimeWarning)
-            stop_training = True
-            return stop_training
+            print(f"Early stopping metric `{self.monitor}` is not available. Available metrics: {','.join(list(logs.keys()))}")
+            return False
 
         if self.monitor_op(current - self.min_delta, self.best):
             self.best = current

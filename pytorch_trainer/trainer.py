@@ -83,9 +83,13 @@ class Trainer():
                     if i >= max_batches:
                         break
 
-            logs = self.validate(self.model)
-            self.__log_metrics(logs)
-            processed_logs = self.__process_logs(logs)
+            if self.val_percent > 0.0:
+                logs = self.validate(self.model)
+                self.__log_metrics(logs)
+                processed_logs = self.__process_logs(logs)
+            else:
+                print("Skip validation")
+                processed_logs = {}
             if self.checkpoint_callback != None:
                 self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
 
