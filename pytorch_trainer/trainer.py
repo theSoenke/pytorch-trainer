@@ -11,7 +11,19 @@ except ImportError:
 
 
 class Trainer():
-    def __init__(self, seed=0, gpu_id=0, num_max_epochs=100, checkpoint_callback=None, early_stop_callback=None, logger=None, use_amp=False):
+    def __init__(
+        self,
+        seed=0,
+        gpu_id=0,
+        num_max_epochs=100,
+        checkpoint_callback=None,
+        early_stop_callback=None,
+        logger=None,
+        use_amp=False,
+        train_percent=1.0,
+        val_percent=1.0,
+        test_percent=1.0,
+    ):
         self.seed = seed
         self.gpu_id = gpu_id
         self.num_max_epochs = num_max_epochs
@@ -19,6 +31,9 @@ class Trainer():
         self.early_stop_callback = early_stop_callback
         self.logger = logger
         self.use_amp = use_amp
+        self.train_percent = train_percent
+        self.val_percent = val_percent
+        self.test_percent = test_percent
 
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -40,8 +55,9 @@ class Trainer():
                 self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
         dataloader = model.train_dataloader()
-        samples = len(dataloader.dataset)
+        samples = int(len(dataloader.dataset) * self.train_percent)
         batch_size = dataloader.batch_size
+        max_batches = int(len(dataloader) * self.train_percent)
 
         for epoch in range(self.num_max_epochs):
             with tqdm(total=samples) as pbar:
@@ -59,11 +75,13 @@ class Trainer():
                     model.optimizer_step(self.optimizer)
 
                     logs = self.__process_logs(output)
-                    logs['bs'] = batch_size
                     pbar.set_postfix(logs)
                     self.__log_metrics(output)
                     processed = min((i + 1) * batch_size, samples)
                     pbar.n = processed
+
+                    if i >= max_batches:
+                        break
 
             logs = self.validate(self.model)
             self.__log_metrics(logs)
@@ -81,8 +99,9 @@ class Trainer():
         model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader()
-        samples = len(dataloader.dataset)
+        samples = int(len(dataloader.dataset) * self.val_percent)
         batch_size = dataloader.batch_size
+        max_batches = int(len(dataloader) * self.val_percent)
 
         outputs = []
         with tqdm(total=samples) as pbar:
@@ -95,6 +114,9 @@ class Trainer():
                 processed = min((i + 1) * batch_size, samples)
                 pbar.n = processed
 
+                if i >= max_batches:
+                    break
+
         model.train()
         results = model.validation_end(outputs)
         return results
@@ -104,8 +126,9 @@ class Trainer():
         model.to(self.device)
         model.eval()
         dataloader = model.test_dataloader()
-        samples = len(dataloader.dataset)
+        samples = int(len(dataloader.dataset) * self.test_percent)
         batch_size = dataloader.batch_size
+        max_batches = int(len(dataloader) * self.test_percent)
 
         outputs = []
         with tqdm(total=samples) as pbar:
@@ -117,6 +140,9 @@ class Trainer():
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
                 pbar.n = processed
+
+                if i >= max_batches:
+                    break
 
         model.train()
         results = model.test_end(outputs)
