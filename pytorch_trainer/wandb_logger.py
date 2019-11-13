@@ -18,7 +18,7 @@ class WandbLogger():
         wandb.config[key] = value
 
     def save_file(self, path):
-        if os.path.exists(path):
+        if path is not None and os.path.exists(path):
             wandb.save(path)
         else:
             print(f"File to log does not exist: {path}")
