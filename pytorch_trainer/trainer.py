@@ -85,7 +85,7 @@ class Trainer():
                 print("Skipping validation")
                 logs = None
             logs = self.__process_logs(logs)
-            self.create_checkpoint(logs)
+            self.__create_checkpoint(logs)
             if self.early_stop_callback != None:
                 stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=logs)
                 if stop_training:
@@ -163,6 +163,11 @@ class Trainer():
             processed_logs = self.__process_logs(outputs['log'])
             self.logger.log_metrics(processed_logs)
 
+    def __create_checkpoint(self, logs=None):
+        logs = logs or {}
+        if self.checkpoint_callback != None:
+            self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
+
     def transfer_batch_to_gpu(self, batch, gpu_id):
         if callable(getattr(batch, 'cuda', None)):
             return batch.cuda(gpu_id)
@@ -184,11 +189,6 @@ class Trainer():
             return batch
 
         return batch
-
-    def create_checkpoint(self, logs=None):
-        logs = logs or {}
-        if self.checkpoint_callback != None:
-            self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
 
     def save_checkpoint(self, filepath):
         checkpoint = {
