@@ -84,9 +84,10 @@ class Trainer():
             else:
                 print("Skipping validation")
                 logs = None
+            logs = self.__process_logs(logs)
             self.create_checkpoint(logs)
             if self.early_stop_callback != None:
-                stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=processed_logs)
+                stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=logs)
                 if stop_training:
                     break
 
@@ -146,6 +147,7 @@ class Trainer():
 
     def __process_logs(self, logs):
         metrics = {}
+        logs = logs or {}
         for key, value in logs.items():
             if key == 'log':
                 continue
@@ -185,9 +187,8 @@ class Trainer():
 
     def create_checkpoint(self, logs=None):
         logs = logs or {}
-        processed_logs = self.__process_logs(logs)
         if self.checkpoint_callback != None:
-            self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
+            self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
 
     def save_checkpoint(self, filepath):
         checkpoint = {
