@@ -31,6 +31,7 @@ class Trainer():
         self.logger = logger
         self.val_percent = val_percent
         self.test_percent = test_percent
+        self.current_epoch = 0
 
         self.use_amp = False
         if use_amp:
@@ -61,6 +62,7 @@ class Trainer():
         batch_size = dataloader.batch_size
 
         for epoch in range(self.num_max_epochs):
+            self.current_epoch = epoch
             with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
                 for i, batch in enumerate(dataloader):
@@ -185,7 +187,7 @@ class Trainer():
         logs = logs or {}
         processed_logs = self.__process_logs(logs)
         if self.checkpoint_callback != None:
-            self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
+            self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
 
     def save_checkpoint(self, filepath):
         checkpoint = {
