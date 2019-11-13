@@ -20,7 +20,6 @@ class Trainer():
         early_stop_callback=None,
         logger=None,
         use_amp=False,
-        train_percent=1.0,
         val_percent=1.0,
         test_percent=1.0,
     ):
@@ -30,7 +29,6 @@ class Trainer():
         self.checkpoint_callback = checkpoint_callback
         self.early_stop_callback = early_stop_callback
         self.logger = logger
-        self.train_percent = train_percent
         self.val_percent = val_percent
         self.test_percent = test_percent
 
@@ -59,9 +57,8 @@ class Trainer():
             self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
         dataloader = model.train_dataloader()
-        samples = int(len(dataloader.dataset) * self.train_percent)
+        samples = len(dataloader.dataset)
         batch_size = dataloader.batch_size
-        max_batches = int(len(dataloader) * self.train_percent)
 
         for epoch in range(self.num_max_epochs):
             with tqdm(total=samples) as pbar:
@@ -79,19 +76,13 @@ class Trainer():
                     processed = min((i + 1) * batch_size, samples)
                     pbar.n = processed
 
-                    if i >= max_batches:
-                        break
-
             if self.val_percent > 0.0:
                 logs = self.validate(self.model)
                 self.__log_metrics(logs)
-                processed_logs = self.__process_logs(logs)
             else:
                 print("Skipping validation")
-                processed_logs = {}
-            if self.checkpoint_callback != None:
-                self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
-
+                logs = None
+            self.create_checkpoint(logs)
             if self.early_stop_callback != None:
                 stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=processed_logs)
                 if stop_training:
@@ -189,6 +180,12 @@ class Trainer():
             return batch
 
         return batch
+
+    def create_checkpoint(self, logs=None):
+        logs = logs or {}
+        processed_logs = self.__process_logs(logs)
+        if self.checkpoint_callback != None:
+            self.checkpoint_callback.on_epoch_end(epoch, save_func=self.save_checkpoint, seed=self.seed, logs=processed_logs)
 
     def save_checkpoint(self, filepath):
         checkpoint = {
