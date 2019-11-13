@@ -6,13 +6,15 @@ import numpy as np
 
 
 class ModelCheckpoint():
-    def __init__(self, directory, monitor='val_loss', save_best_only=False, save_weights_only=False, mode='max', prefix=''):
+    def __init__(self, directory, monitor='val_loss', save_best_only=False, period=1, save_weights_only=False, mode='max', prefix=''):
         super().__init__()
         self.monitor = monitor
         self.directory = directory
         self.save_best_only = save_best_only
         self.prefix = prefix
         self.last_checkpoint_path = None
+        self.period = period
+        self.epochs_since_saved = 0
 
         if mode == 'min':
             self.monitor_op = np.less
@@ -33,9 +35,13 @@ class ModelCheckpoint():
         save_func(filepath)
 
     def on_epoch_end(self, epoch, save_func, seed, logs=None):
-        logs = logs or {}
+        self.epochs_since_saved += 1
+        if self.epochs_since_saved < self.period:
+            return
+
         filepath = f"{self.directory}/{self.prefix}_ckpt_epoch_{epoch}_seed_{seed}.ckpt"
         if self.save_best_only:
+            logs = logs or {}
             current = logs.get(self.monitor)
             if current is None:
                 print(f"Can save best model only with {self.monitor} available\n")
