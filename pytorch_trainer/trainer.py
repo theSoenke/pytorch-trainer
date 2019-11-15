@@ -67,7 +67,7 @@ class Trainer():
                 pbar.set_description(f"Epoch {epoch:05d}")
                 for i, batch in enumerate(dataloader):
                     if self.use_gpu:
-                        batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
+                        batch = self.transfer_batch_to_gpu(batch)
                     output = self.model.training_step(batch, i)
                     self.model.backward(output['loss'], self.optimizer, self.use_amp)
                     self.model.optimizer_step(self.optimizer)
@@ -105,7 +105,7 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 pbar.set_description("Validation")
                 if self.use_gpu:
-                    batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
+                    batch = self.transfer_batch_to_gpu(batch)
                 output = model.validation_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
@@ -132,7 +132,7 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 pbar.set_description("Test")
                 if self.use_gpu:
-                    batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
+                    batch = self.transfer_batch_to_gpu(batch)
                 output = model.test_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
@@ -168,23 +168,21 @@ class Trainer():
         if self.checkpoint_callback != None:
             self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
 
-    def transfer_batch_to_gpu(self, batch, gpu_id):
-        if callable(getattr(batch, 'cuda', None)):
-            return batch.cuda(gpu_id)
-        elif callable(getattr(batch, 'to', None)):
-            return batch.to(torch.device('cuda', gpu_id))
+    def transfer_batch_to_gpu(self, batch):
+        if callable(getattr(batch, 'to', None)):
+            return batch.to(self.device)
         elif isinstance(batch, list):
             for i, x in enumerate(batch):
-                batch[i] = self.transfer_batch_to_gpu(x, gpu_id)
+                batch[i] = self.transfer_batch_to_gpu(x)
             return batch
         elif isinstance(batch, tuple):
             batch = list(batch)
             for i, x in enumerate(batch):
-                batch[i] = self.transfer_batch_to_gpu(x, gpu_id)
+                batch[i] = self.transfer_batch_to_gpu(x)
             return tuple(batch)
         elif isinstance(batch, dict):
             for k, v in batch.items():
-                batch[k] = self.transfer_batch_to_gpu(v, gpu_id)
+                batch[k] = self.transfer_batch_to_gpu(v)
 
             return batch
 
