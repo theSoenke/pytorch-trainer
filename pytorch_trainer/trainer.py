@@ -1,7 +1,10 @@
 import random
 
 import torch
+from torch import nn
 from tqdm import tqdm
+
+from pytorch_trainer.data_parallel import DataParallel
 
 try:
     from apex import amp
@@ -14,7 +17,7 @@ class Trainer():
     def __init__(
         self,
         seed=0,
-        gpu_id=0,
+        gpu_ids=[0],
         num_max_epochs=100,
         checkpoint_callback=None,
         early_stop_callback=None,
@@ -24,7 +27,7 @@ class Trainer():
         test_percent=1.0,
     ):
         self.seed = seed
-        self.gpu_id = gpu_id
+        self.gpu_ids = gpu_ids
         self.num_max_epochs = num_max_epochs
         self.checkpoint_callback = checkpoint_callback
         self.early_stop_callback = early_stop_callback
@@ -47,8 +50,12 @@ class Trainer():
         torch.backends.cudnn.deterministic = False
         torch.backends.cudnn.benchmark = True
 
-        self.use_gpu = torch.cuda.is_available()
-        self.device = torch.device(f"cuda:{gpu_id}" if self.use_gpu else "cpu")
+        self.use_gpu = torch.cuda.is_available() and len(self.gpu_ids) > 0
+        if self.use_gpu:
+            self.device = torch.device(f"cuda:{gpu_ids[0]}")
+        else:
+            self.device = torch.device("cpu")
+        self.multi_gpu = self.use_gpu and len(self.gpu_ids) > 1
 
     def fit(self, model):
         self.model = model
@@ -56,6 +63,8 @@ class Trainer():
         self.model.to(self.device)
         if self.use_amp:
             self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
+        if len(self.gpu_ids) > 1:
+            self.model = DataParallel(self.model)
         self.model.train()
         dataloader = model.train_dataloader()
         samples = len(dataloader.dataset)
@@ -65,17 +74,22 @@ class Trainer():
             self.current_epoch = epoch
             with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
-                for i, batch in enumerate(dataloader):
+                for batch_num, batch in enumerate(dataloader):
                     if self.use_gpu:
-                        batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                    output = self.model.training_step(batch, i)
+                        batch = self.transfer_batch_to_gpu(batch)
+                    args = [batch, batch_num]
+                    if self.multi_gpu:
+                        output = self.model(*args)
+                    else:
+                        output = self.model.training_step(*args)
+
                     self.model.backward(output['loss'], self.optimizer, self.use_amp)
                     self.model.optimizer_step(self.optimizer)
 
                     logs = self.__process_logs(output)
                     pbar.set_postfix(logs)
                     self.__log_metrics(output)
-                    processed = min((i + 1) * batch_size, samples)
+                    processed = min((batch_num + 1) * batch_size, samples)
                     pbar.n = processed
 
             if self.val_percent > 0.0:
@@ -105,8 +119,11 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 pbar.set_description("Validation")
                 if self.use_gpu:
-                    batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
-                output = model.validation_step(batch, i)
+                    batch = self.transfer_batch_to_gpu(batch)
+                if self.multi_gpu:
+                    output = model(batch)
+                else:
+                    output = model.validation_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
                 pbar.n = processed
@@ -132,7 +149,7 @@ class Trainer():
             for i, batch in enumerate(dataloader):
                 pbar.set_description("Test")
                 if self.use_gpu:
-                    batch = self.transfer_batch_to_gpu(batch, self.gpu_id)
+                    batch = self.transfer_batch_to_gpu(batch)
                 output = model.test_step(batch, i)
                 outputs.append(output)
                 processed = min((i + 1) * batch_size, samples)
@@ -168,23 +185,21 @@ class Trainer():
         if self.checkpoint_callback != None:
             self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
 
-    def transfer_batch_to_gpu(self, batch, gpu_id):
-        if callable(getattr(batch, 'cuda', None)):
-            return batch.cuda(gpu_id)
-        elif callable(getattr(batch, 'to', None)):
-            return batch.to(torch.device('cuda', gpu_id))
+    def transfer_batch_to_gpu(self, batch):
+        if callable(getattr(batch, 'to', None)):
+            return batch.to(self.device)
         elif isinstance(batch, list):
             for i, x in enumerate(batch):
-                batch[i] = self.transfer_batch_to_gpu(x, gpu_id)
+                batch[i] = self.transfer_batch_to_gpu(x)
             return batch
         elif isinstance(batch, tuple):
             batch = list(batch)
             for i, x in enumerate(batch):
-                batch[i] = self.transfer_batch_to_gpu(x, gpu_id)
+                batch[i] = self.transfer_batch_to_gpu(x)
             return tuple(batch)
         elif isinstance(batch, dict):
             for k, v in batch.items():
-                batch[k] = self.transfer_batch_to_gpu(v, gpu_id)
+                batch[k] = self.transfer_batch_to_gpu(v)
 
             return batch
 
