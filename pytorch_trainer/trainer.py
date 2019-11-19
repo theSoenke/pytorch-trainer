@@ -61,6 +61,7 @@ class Trainer():
         samples = len(dataloader.dataset)
         batch_size = dataloader.batch_size
 
+        self.validate(self.model, fast_validate=True)
         for epoch in range(self.num_max_epochs):
             self.current_epoch = epoch
             with tqdm(total=samples) as pbar:
@@ -92,18 +93,24 @@ class Trainer():
                     break
 
     @torch.no_grad()
-    def validate(self, model):
+    def validate(self, model, fast_validate=False):
         model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader()
-        samples = int(len(dataloader.dataset) * self.val_percent)
         batch_size = dataloader.batch_size
-        max_batches = int(len(dataloader) * self.val_percent)
+        if fast_validate:
+            samples = min(2 * batch_size, int(len(dataloader.dataset)))
+            max_batches = 2
+        else:
+            samples = int(len(dataloader.dataset) * self.val_percent)
+            max_batches = int(len(dataloader) * self.val_percent)
 
         outputs = []
+        description = 'Check validation step' if fast_validate else 'Validation'
         with tqdm(total=samples) as pbar:
             for i, batch in enumerate(dataloader):
-                pbar.set_description("Validation")
+                pbar.set_description(description)
+
                 if self.use_gpu:
                     batch = self.transfer_batch_to_gpu(batch)
                 output = model.validation_step(batch, i)

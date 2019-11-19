@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pytorch-trainer",
-    version="0.6.2",
+    version="0.6.3",
     description="Lightweight wrapper around PyTorch ",
     long_description=long_description,
     long_description_content_type="text/markdown",
