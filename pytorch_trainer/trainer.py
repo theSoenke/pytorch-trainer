@@ -64,6 +64,7 @@ class Trainer():
         self.validate(self.model, fast_validate=True)
         for epoch in range(self.num_max_epochs):
             self.current_epoch = epoch
+            self.model.on_epoch_start(epoch)
             with tqdm(total=samples) as pbar:
                 pbar.set_description(f"Epoch {epoch:05d}")
                 for i, batch in enumerate(dataloader):
@@ -91,6 +92,8 @@ class Trainer():
                 stop_training = self.early_stop_callback.on_epoch_end(epoch=epoch, logs=logs)
                 if stop_training:
                     break
+
+            self.model.on_epoch_end(epoch)
 
     @torch.no_grad()
     def validate(self, model, fast_validate=False):

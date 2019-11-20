@@ -43,6 +43,12 @@ class Module(nn.Module):
         else:
             loss.backward()
 
+    def on_epoch_start(self, epoch):
+        pass
+
+    def on_epoch_end(self, epoch):
+        pass
+
     def train_dataloader(self):
         raise NotImplementedError
 
