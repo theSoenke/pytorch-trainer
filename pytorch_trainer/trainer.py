@@ -105,6 +105,7 @@ class Trainer():
 
     @torch.no_grad()
     def validate(self, model, fast_validate=False):
+        model.trainer = self
         model.to(self.device)
         model.eval()
         dataloader = model.val_dataloader()
@@ -138,6 +139,7 @@ class Trainer():
 
     @torch.no_grad()
     def test(self, model):
+        model.trainer = self
         model.to(self.device)
         model.eval()
         dataloader = model.test_dataloader()
