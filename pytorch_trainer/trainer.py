@@ -32,6 +32,7 @@ class Trainer():
         self.val_percent = val_percent
         self.test_percent = test_percent
         self.current_epoch = 0
+        self.scheduler = None
 
         self.use_amp = False
         if use_amp:
