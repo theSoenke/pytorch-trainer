@@ -52,10 +52,18 @@ class Trainer():
 
     def fit(self, model):
         self.model = model
-        self.optimizer = self.model.configure_optimizers()
+        self.model.trainer = self
+        optimizer = self.model.configure_optimizers()
+        if isinstance(optimizer, tuple):
+            self.optimizer = optimizer[0]
+            self.scheduler = optimizer[1]
+        else:
+            self.optimizer = optimizer
+            self.scheduler = None
+
         self.model.to(self.device)
         if self.use_amp:
-            self.model, self.optimizers = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
+            self.model, self.optimizer = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
         dataloader = model.train_dataloader()
         samples = len(dataloader.dataset)

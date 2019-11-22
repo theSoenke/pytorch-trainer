@@ -20,7 +20,13 @@ class MNISTModel(Module):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode='min',
+            factor=0.5,
+            patience=1,
+        )
+        return optimizer, scheduler
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -55,6 +61,12 @@ class MNISTModel(Module):
         logs = {
             'val_loss': avg_loss,
         }
+
+        if self.trainer.scheduler is not None:
+            self.trainer.scheduler.step(avg_loss)
+            for param_group in self.trainer.optimizer.param_groups:
+                logs['lr'] = param_group['lr']
+
         return {
             'val_loss': avg_loss,
             'log': logs,
