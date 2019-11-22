@@ -51,7 +51,7 @@ class Trainer():
         self.use_gpu = torch.cuda.is_available()
         self.device = torch.device(f"cuda:{gpu_id}" if self.use_gpu else "cpu")
 
-    def fit(self, model):
+    def fit(self, model, checkpoint=None):
         self.model = model
         self.model.trainer = self
         optimizer = self.model.configure_optimizers()
@@ -63,6 +63,7 @@ class Trainer():
             self.scheduler = None
 
         self.model.to(self.device)
+        self.__load_checkpoint(checkpoint, self.model, self.optimizer)
         if self.use_amp:
             self.model, self.optimizer = self.model.configure_apex(amp, self.model, self.optimizer, "O1")
         self.model.train()
@@ -105,9 +106,10 @@ class Trainer():
             self.model.on_epoch_end(epoch)
 
     @torch.no_grad()
-    def validate(self, model, fast_validate=False):
+    def validate(self, model, fast_validate=False, checkpoint=None):
         model.trainer = self
         model.to(self.device)
+        self.__load_checkpoint(checkpoint, model)
         model.eval()
         dataloader = model.val_dataloader()
         batch_size = dataloader.batch_size
@@ -141,9 +143,10 @@ class Trainer():
         return results
 
     @torch.no_grad()
-    def test(self, model):
+    def test(self, model, checkpoint=None):
         model.trainer = self
         model.to(self.device)
+        self.__load_checkpoint(checkpoint, model)
         model.eval()
         dataloader = model.test_dataloader()
         samples = int(len(dataloader.dataset) * self.test_percent)
@@ -190,6 +193,14 @@ class Trainer():
         logs = logs or {}
         if self.checkpoint_callback != None:
             self.checkpoint_callback.on_epoch_end(self.current_epoch, save_func=self.save_checkpoint, seed=self.seed, logs=logs)
+
+    def __load_checkpoint(self, checkpoint, model, optimizer=None):
+        if checkpoint is not None:
+            print(f"Loading checkpoint: {checkpoint}")
+            checkpoint = torch.load(checkpoint)
+            model.load_state_dict(checkpoint['state_dict'])
+            if optimizer is not None and 'state_dict' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def transfer_batch_to_gpu(self, batch):
         if callable(getattr(batch, 'to', None)):
