@@ -135,6 +135,8 @@ class Trainer():
                     break
 
         model.train()
+        if fast_validate:
+            return {}
         results = model.validation_end(outputs)
         return results
 
