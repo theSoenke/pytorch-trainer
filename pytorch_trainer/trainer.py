@@ -3,6 +3,8 @@ import random
 import torch
 from tqdm import tqdm
 
+from .model_summary import ModelSummary
+
 try:
     from apex import amp
     APEX_AVAILABLE = True
@@ -52,6 +54,9 @@ class Trainer():
         self.device = torch.device(f"cuda:{gpu_id}" if self.use_gpu else "cpu")
 
     def fit(self, model, checkpoint=None):
+        summary = ModelSummary(model)
+        print(summary)
+
         self.model = model
         self.model.trainer = self
         optimizer = self.model.configure_optimizers()

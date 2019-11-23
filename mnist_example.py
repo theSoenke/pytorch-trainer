@@ -116,5 +116,4 @@ if __name__ == "__main__":
         early_stop_callback=early_stop_callback,
     )
 
-    model.summarize((1, 28, 28))
     trainer.fit(model)

@@ -1,5 +1,4 @@
 from torch import nn, optim
-from torchsummary import summary
 
 try:
     from apex import amp
