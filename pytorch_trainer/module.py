@@ -1,4 +1,5 @@
 from torch import nn, optim
+from torchsummary import summary
 
 try:
     from apex import amp
@@ -72,3 +73,6 @@ class Module(nn.Module):
         )
 
         return model, optimizers
+
+    def summarize(self, input_size):
+        summary(self, input_size, device="cpu")

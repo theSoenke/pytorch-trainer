@@ -1,11 +1,10 @@
 import os
 
 import torch
+from pytorch_trainer import EarlyStopping, ModelCheckpoint, Module, Trainer
 from torch import nn
 from torch.functional import F
 from torch.utils.data import DataLoader
-
-from pytorch_trainer import EarlyStopping, ModelCheckpoint, Module, Trainer
 from torchvision import transforms
 from torchvision.datasets import MNIST
 
@@ -116,4 +115,6 @@ if __name__ == "__main__":
         checkpoint_callback=checkpoint_callback,
         early_stop_callback=early_stop_callback,
     )
+
+    model.summarize((1, 28, 28))
     trainer.fit(model)
