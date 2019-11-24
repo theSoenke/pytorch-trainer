@@ -14,6 +14,7 @@ setuptools.setup(
     install_requires=[
         'torch>=1.2.0',
         'tqdm>=4.35.0',
+        'pandas'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

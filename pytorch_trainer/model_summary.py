@@ -13,10 +13,10 @@ class ModelSummary(object):
         self.summarize()
 
     def __str__(self):
-        return self.summary.__str__()
+        return self.summary.to_string()
 
     def __repr__(self):
-        return self.summary.__str__()
+        return self.summary.to_string()
 
     def named_modules(self):
         if self.mode == 'full':

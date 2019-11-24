@@ -54,8 +54,7 @@ class Trainer():
         self.device = torch.device(f"cuda:{gpu_id}" if self.use_gpu else "cpu")
 
     def fit(self, model, checkpoint=None):
-        summary = ModelSummary(model)
-        print(summary)
+        print(ModelSummary(model, mode='top'))
 
         self.model = model
         self.model.trainer = self
