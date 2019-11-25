@@ -17,7 +17,7 @@ class Trainer():
         self,
         seed=0,
         gpu_id=0,
-        num_max_epochs=100,
+        epochs=100,
         checkpoint_callback=None,
         early_stop_callback=None,
         logger=None,
@@ -27,7 +27,7 @@ class Trainer():
     ):
         self.seed = seed
         self.gpu_id = gpu_id
-        self.num_max_epochs = num_max_epochs
+        self.epochs = epochs
         self.checkpoint_callback = checkpoint_callback
         self.early_stop_callback = early_stop_callback
         self.logger = logger
@@ -76,11 +76,11 @@ class Trainer():
         batch_size = dataloader.batch_size
 
         self.validate(self.model, fast_validate=True)
-        for epoch in range(self.num_max_epochs):
+        for epoch in range(self.epochs):
             self.current_epoch = epoch
             self.model.on_epoch_start(epoch)
             with tqdm(total=samples) as pbar:
-                pbar.set_description(f"Epoch {epoch:05d}")
+                pbar.set_description(f"Epoch [{epoch + 1}/{self.epochs}]")
                 for i, batch in enumerate(dataloader):
                     if self.use_gpu:
                         batch = self.transfer_batch_to_gpu(batch)

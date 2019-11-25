@@ -114,6 +114,7 @@ if __name__ == "__main__":
     trainer = Trainer(
         checkpoint_callback=checkpoint_callback,
         early_stop_callback=early_stop_callback,
+        epochs=10,
     )
 
     trainer.fit(model)
